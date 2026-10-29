@@ -1,0 +1,361 @@
+
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Interactive AU: One Last Game</title>
+<style>
+*{box-sizing:border-box}
+:root{--glass:rgba(255,255,255,.22)}
+body{margin:0;min-height:100vh;display:flex;justify-content:center;align-items:center;background:#171717;color:white;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+button{font:inherit;cursor:pointer}
+.phone-container{width:min(100%,420px);height:min(900px,100dvh);min-height:620px;border:8px solid #292929;border-radius:42px;overflow:hidden;position:relative;background:linear-gradient(145deg,#7c8b9b,#263c50 45%,#171b2a);box-shadow:0 15px 35px #0009}
+.screen{position:absolute;inset:0;display:none;flex-direction:column;overflow:hidden}
+.active-screen{display:flex}
+.dynamic-island{position:absolute;z-index:100;top:10px;left:50%;transform:translateX(-50%);width:105px;height:28px;background:#000;border-radius:20px;pointer-events:none}
+.lock-time{text-align:center;margin-top:72px;text-shadow:0 2px 8px #0005}
+.lock-time h1{font-size:4.5rem;font-weight:300;margin:0;letter-spacing:-2px}
+.lock-time p{margin:5px 0;font-size:1.05rem}
+.notification-center{margin-top:auto;padding:18px;margin-bottom:10px}
+.ios-notification{display:flex;gap:12px;align-items:center;padding:15px;border-radius:20px;background:rgba(255,255,255,.23);backdrop-filter:blur(20px);cursor:pointer}
+.notif-icon{width:40px;height:40px;flex-shrink:0;border-radius:10px;background:#25d366;display:grid;place-items:center;font-size:1.3rem}
+.notif-content h4{margin:0 0 4px}
+.notif-content p{margin:0;font-size:.85rem;line-height:1.4}
+.swipe-hint{text-align:center;margin:8px 0 35px;font-size:.85rem;cursor:pointer}
+#passcode-screen{background:#202735dd;backdrop-filter:blur(25px);align-items:center;justify-content:center}
+.pass-title{margin:45px 0 20px;text-align:center}
+.pass-title h2{font-size:1.15rem;font-weight:400}
+#passcode-error{height:18px;color:#ffb0b0;font-size:.85rem}
+.dots-container{display:flex;gap:18px;margin:12px 0 30px}
+.dot{width:13px;height:13px;border:2px solid white;border-radius:50%}
+.dot.filled{background:white}
+.keypad{display:grid;grid-template-columns:repeat(3,70px);gap:12px 20px}
+.key{width:70px;height:70px;border:0;border-radius:50%;background:#ffffff20;color:white;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:1.7rem}
+.key span{font-size:.55rem}
+.key:active{background:#ffffff55}
+#home-screen{padding:60px 16px 20px;background:linear-gradient(160deg,#8796a4,#46586a 55%,#252e3b)}
+.widget-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:10px 0 25px}
+.ios-widget{height:130px;border-radius:20px;padding:13px}
+.widget-date{background:#fff;color:#111}
+.widget-date .day{color:#e34d54;font-size:.8rem;font-weight:700}
+.widget-date .date{font-size:3rem;font-weight:300;margin-top:5px}
+.widget-weather{background:#435b75dd;display:flex;flex-direction:column;justify-content:space-between}
+.widget-weather .temp{font-size:1.8rem}
+.widget-weather small{color:#e0e7ef}
+.app-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:22px 8px}
+.app-icon-wrapper{display:flex;flex-direction:column;align-items:center;gap:5px;min-width:0;background:none;border:0;color:white;padding:0}
+.app-icon{width:54px;height:54px;border-radius:14px;display:grid;place-items:center;font-size:1.8rem;box-shadow:0 4px 9px #0003}
+.app-name{font-size:.7rem;text-shadow:0 2px 4px #000;text-align:center}
+.icon-photos{background:linear-gradient(135deg,#ff3b30,#ff9500,#4cd964,#5ac8fa,#5856d6)}
+.icon-notes{background:#ffcc00}
+.icon-instagram{background:linear-gradient(45deg,#f09433,#dc2743,#bc1888)}
+.icon-wa{background:#25d366}
+.ios-dock{margin-top:auto;margin-bottom:24px;background:#ffffff38;backdrop-filter:blur(20px);border-radius:23px;padding:12px;display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+#whatsapp-app{background:#0b141a}
+.app-header{background:#202c33;padding:42px 14px 13px;display:flex;align-items:center;gap:12px;border-bottom:1px solid #34414a;flex-shrink:0}
+.btn-back{border:0;background:none;color:#46d9b0;font-size:1rem}
+.chat-body{flex:1;min-height:0;padding:16px;overflow-y:auto;display:flex;flex-direction:column;gap:11px}
+.bubble{max-width:85%;padding:10px 13px;border-radius:12px;font-size:.9rem;line-height:1.45;overflow-wrap:anywhere;white-space:pre-wrap}
+.incoming{background:#202c33;align-self:flex-start;border-top-left-radius:2px}
+.outgoing{background:#005c4b;align-self:flex-end;border-top-right-radius:2px}
+.system{background:#182229;color:#b2bec5;align-self:center;text-align:center;font-size:.78rem;padding:6px 10px;border-radius:7px}
+.chat-input-area{padding:12px;background:#111b21;display:flex;flex-direction:column;gap:8px;max-height:42%;overflow-y:auto;flex-shrink:0}
+.wa-btn{background:#202c33;color:#e9edef;border:1px solid #3d4a54;padding:11px;border-radius:9px;text-align:left;font-size:.84rem;line-height:1.4}
+.wa-btn:active{background:#354650}
+#notes-app{background:#fff;color:#222;padding:44px 20px 25px;overflow-y:auto}
+.note-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:30px;color:#c39800;font-weight:600}
+.note-header button{background:none;border:0;color:#c39800}
+.note-content h2{font-size:1.5rem;margin:0 0 8px}
+.note-content small{color:#888}
+.note-content p{font-size:1rem;line-height:1.65;white-space:pre-wrap}
+#instagram-app{background:#080808;overflow-y:auto}
+.ig-header{padding:44px 15px 14px;font-size:1.25rem;font-weight:bold;border-bottom:1px solid #292929}
+.ig-profile{display:flex;align-items:center;gap:15px;padding:18px 15px}
+.ig-avatar{width:68px;height:68px;flex-shrink:0;border-radius:50%;background:linear-gradient(45deg,#ffb347,#df3c79,#7855d8);display:grid;place-items:center;font-size:2rem}
+.ig-stats{display:flex;gap:16px;text-align:center;font-size:.82rem}
+.ig-stats strong{display:block;font-size:.95rem}
+.ig-bio{padding:0 15px 16px;font-size:.85rem;line-height:1.5}
+.ig-post{margin:10px 12px 16px;padding:15px;border:1px solid #292929;border-radius:10px;background:#111}
+.ig-post h4{margin:0 0 8px;color:#e8a5db}
+.ig-post p{font-size:.9rem;line-height:1.5;margin:0}
+#photos-app{background:#fff;color:#222;padding:45px 15px 25px;overflow-y:auto}
+.photos-title{display:flex;align-items:center;justify-content:space-between}
+.gallery-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-top:18px}
+.gallery-item{aspect-ratio:1;border:0;border-radius:4px;background:linear-gradient(145deg,#e8d9d1,#9caec1);font-size:1.8rem}
+.gallery-item:nth-child(2){background:linear-gradient(145deg,#e5c8a9,#9b7387)}
+.gallery-item:nth-child(3){background:linear-gradient(145deg,#b2d2d0,#465d6a)}
+.album-caption{font-size:.85rem;color:#666;margin-top:15px}
+.home-bar{position:absolute;z-index:120;bottom:7px;left:50%;transform:translateX(-50%);width:125px;height:5px;border:0;border-radius:5px;background:#fff}
+.home-bar.dark{background:#444}
+@media(max-height:700px){.lock-time{margin-top:55px}.lock-time h1{font-size:3.6rem}.keypad{gap:8px 18px}.key{width:60px;height:60px}.widget-row{margin-bottom:15px}.ios-widget{height:110px}.app-grid{gap:14px 6px}.app-icon{width:47px;height:47px}}
+</style>
+</head>
+<body>
+<div class="phone-container">
+<div class="dynamic-island"></div>
+
+<!-- LOCK SCREEN -->
+<section id="lock-screen" class="screen active-screen">
+  <div class="lock-time">
+    <p>Kamis, 22 Oktober</p>
+    <h1>09:41</h1>
+  </div>
+  <div class="notification-center">
+    <div class="ios-notification" onclick="goToScreen('passcode-screen')">
+      <div class="notif-icon">💬</div>
+      <div class="notif-content">
+        <h4>Mantanmu</h4>
+        <p>Can we play one last game? Temuin semua jawaban di HP ini kalau mau tau alasan gue dulu...</p>
+      </div>
+    </div>
+  </div>
+  <div class="swipe-hint" onclick="goToScreen('passcode-screen')">Tap to unlock ↑</div>
+</section>
+
+<!-- PASSCODE -->
+<section id="passcode-screen" class="screen">
+  <div class="pass-title">
+    <h2>Enter Passcode</h2>
+    <div id="passcode-error" aria-live="polite"></div>
+  </div>
+  <div class="dots-container">
+    <div class="dot" id="dot0"></div><div class="dot" id="dot1"></div>
+    <div class="dot" id="dot2"></div><div class="dot" id="dot3"></div>
+  </div>
+  <div class="keypad">
+    <button class="key" onclick="pressKey('1')">1</button>
+    <button class="key" onclick="pressKey('2')">2<span>ABC</span></button>
+    <button class="key" onclick="pressKey('3')">3<span>DEF</span></button>
+    <button class="key" onclick="pressKey('4')">4<span>GHI</span></button>
+    <button class="key" onclick="pressKey('5')">5<span>JKL</span></button>
+    <button class="key" onclick="pressKey('6')">6<span>MNO</span></button>
+    <button class="key" onclick="pressKey('7')">7<span>PQRS</span></button>
+    <button class="key" onclick="pressKey('8')">8<span>TUV</span></button>
+    <button class="key" onclick="pressKey('9')">9<span>WXYZ</span></button>
+    <div></div>
+    <button class="key" onclick="pressKey('0')">0</button>
+    <button class="key" style="font-size:.85rem" onclick="clearPasscode()">Del</button>
+  </div>
+</section>
+
+<!-- HOME SCREEN -->
+<section id="home-screen" class="screen">
+  <div class="widget-row">
+    <div class="ios-widget widget-date"><div class="day">KAMIS</div><div class="date">22</div><small>Oktober</small></div>
+    <div class="ios-widget widget-weather"><div>📍 Jakarta</div><div class="temp">28°</div><small>Hujan Ringan</small></div>
+  </div>
+  <div class="app-grid">
+    <button class="app-icon-wrapper" onclick="openApp('photos')"><span class="app-icon icon-photos">🌸</span><span class="app-name">Photos</span></button>
+    <button class="app-icon-wrapper" onclick="openApp('notes')"><span class="app-icon icon-notes">📝</span><span class="app-name">Notes</span></button>
+    <button class="app-icon-wrapper" onclick="openApp('instagram')"><span class="app-icon icon-instagram">📸</span><span class="app-name">Instagram</span></button>
+    <button class="app-icon-wrapper" onclick="openApp('whatsapp')"><span class="app-icon icon-wa">💬</span><span class="app-name">WhatsApp</span></button>
+  </div>
+  <div class="ios-dock">
+    <button class="app-icon-wrapper" onclick="openApp('whatsapp')"><span class="app-icon icon-wa">💬</span><span class="app-name">WhatsApp</span></button>
+    <button class="app-icon-wrapper" onclick="openApp('photos')"><span class="app-icon">🧭</span><span class="app-name">Safari</span></button>
+    <button class="app-icon-wrapper" onclick="openApp('instagram')"><span class="app-icon icon-instagram">📸</span><span class="app-name">Instagram</span></button>
+    <button class="app-icon-wrapper" onclick="openApp('notes')"><span class="app-icon icon-notes">📝</span><span class="app-name">Notes</span></button>
+  </div>
+</section>
+
+<!-- WHATSAPP -->
+<section id="whatsapp-app" class="screen">
+  <div class="app-header">
+    <button class="btn-back" onclick="handleHomeButton()">◀</button>
+    <div><strong>Ega (Mantan)</strong><div style="font-size:.75rem;color:#a8b6bd">online</div></div>
+  </div>
+  <div id="wa-chat-body" class="chat-body"></div>
+  <div id="wa-choices-area" class="chat-input-area"></div>
+</section>
+
+<!-- NOTES -->
+<section id="notes-app" class="screen">
+  <div class="note-header"><button onclick="handleHomeButton()">◀ Notes</button><span>Done</span></div>
+  <div class="note-content">
+    <h2>Draft Chat Unsent.txt</h2>
+    <small>Terakhir diubah: 3 bulan lalu</small>
+    <p>Jujur gue capek pura-pura sibuk terus tiap hari cuma biar lo ga kebiasaan bergantung sama gue. Gue lakuin ini karena tembok agama kita terlalu tinggi, dan gue ga mau bikin lo makin sakit pas kita beneran harus selesai nanti. Tapi malah bikin lo trust issue ya? Maaf banget...</p>
+  </div>
+</section>
+
+<!-- INSTAGRAM -->
+<section id="instagram-app" class="screen">
+  <div class="ig-header">Instagram</div>
+  <div class="ig-profile">
+    <div class="ig-avatar">💔</div>
+    <div><strong>@ega.rnnd</strong><div class="ig-stats"><span><strong>3</strong> Posts</span><span><strong>412</strong> Followers</span></div></div>
+  </div>
+  <div class="ig-bio">Ega<br>Some things are better left unsaid.</div>
+  <article class="ig-post"><h4>3 Bulan Lalu</h4><p>"Mencintai dalam diam dan berpura-pura menjauh adalah caraku menjagamu dari takdir kita yang ga akan pernah searah."</p></article>
+  <article class="ig-post"><h4>5 Bulan Lalu</h4><p>"Tempat ibadah kita aja beda, gimana bisa kita minta restu ke Tuhan yang sama?"</p></article>
+  <article class="ig-post"><h4>Memories</h4><p>Beberapa kenangan yang masih belum bisa gue hapus. 💔</p></article>
+</section>
+
+<!-- PHOTOS -->
+<section id="photos-app" class="screen">
+  <div class="photos-title"><button class="btn-back" onclick="handleHomeButton()">◀ Albums</button><strong>Memories</strong></div>
+  <div class="gallery-grid">
+    <button class="gallery-item" onclick="showPhoto('🎸 Kenangan saat kita menonton band bersama.')">🎸</button>
+    <button class="gallery-item" onclick="showPhoto('💍 Foto cincin yang pernah kita bicarakan.')">💍</button>
+    <button class="gallery-item" onclick="showPhoto('📱 Chat lama yang masih tersimpan.')">📱</button>
+  </div>
+  <p class="album-caption">Ketuk salah satu kenangan untuk membuka keterangannya.</p>
+  <p id="photo-caption"></p>
+</section>
+
+<button id="bottom-home-bar" class="home-bar" onclick="handleHomeButton()" aria-label="Home"></button>
+</div>
+
+<script>
+"use strict";
+
+const CORRECT_PASSCODE = "0606";
+let currentInput = "";
+
+const auStory = {
+  start: {
+    messages: [
+      { type: "system", text: "Hari ini" },
+      { type: "incoming", text: "Gue tau lo masih sayang sama gue. Jangan bohongin perasaan lo lagi, plis balikan sama gue..." },
+      { type: "incoming", text: "Gue beneran minta maaf soal masa lalu yang tiba-tiba ngilang dan selalu bilang sibuk." }
+    ],
+    choices: [
+      { text: "💬 'Gue capek Ga, trust issue gue karena kelakuan lo dulu belum sembuh.'", nextNode: "ruteCapek" },
+      { text: "💬 'Lagian kita beda agama, mau dipaksain gimanapun ga bakal bisa.'", nextNode: "ruteAgama" }
+    ]
+  },
+  ruteCapek: {
+    messages: [
+      { type: "outgoing", text: "Gue capek Ga, trust issue gue karena kelakuan lo dulu belum sembuh." },
+      { type: "incoming", text: "Gue lakuin itu bukan karena bosen atau ada cewe lain. Coba lo buka aplikasi NOTES sama INSTAGRAM di HP ini, gue udah tulis semua kebenarannya di sana." }
+    ],
+    choices: [{ text: "🔄 Ulangi Chat", nextNode: "start" }]
+  },
+  ruteAgama: {
+    messages: [
+      { type: "outgoing", text: "Lagian kita beda agama, mau dipaksain gimanapun ga bakal bisa." },
+      { type: "incoming", text: "Gue tau tembok kita tinggi. Tapi seenggaknya jangan benci gue karena masa lalu itu. Alasan gue menjauh ada di aplikasi NOTES." }
+    ],
+    choices: [{ text: "🔄 Ulangi Chat", nextNode: "start" }]
+  }
+};
+
+function goToScreen(screenId) {
+  const target = document.getElementById(screenId);
+  if (!target) {
+    console.error("Screen tidak ditemukan:", screenId);
+    return;
+  }
+
+  document.querySelectorAll(".screen").forEach(screen => {
+    screen.classList.remove("active-screen");
+  });
+  target.classList.add("active-screen");
+
+  const homeBar = document.getElementById("bottom-home-bar");
+  if (homeBar) {
+    homeBar.classList.toggle("dark", ["notes-app", "photos-app"].includes(screenId));
+  }
+}
+
+function handleHomeButton() {
+  const active = document.querySelector(".screen.active-screen");
+  if (!active) return;
+
+  if (active.id === "passcode-screen") {
+    clearPasscode();
+    goToScreen("lock-screen");
+  } else if (active.id === "home-screen") {
+    goToScreen("lock-screen");
+  } else {
+    goToScreen("home-screen");
+  }
+}
+
+function pressKey(num) {
+  if (currentInput.length >= 4) return;
+
+  currentInput += String(num);
+  const dot = document.getElementById(`dot${currentInput.length - 1}`);
+  if (dot) dot.classList.add("filled");
+
+  if (currentInput.length === 4) {
+    setTimeout(() => {
+      if (currentInput === CORRECT_PASSCODE) {
+        document.getElementById("passcode-error").textContent = "";
+        clearPasscode();
+        goToScreen("home-screen");
+      } else {
+        document.getElementById("passcode-error").textContent = "Passcode Salah!";
+        clearPasscode();
+      }
+    }, 250);
+  }
+}
+
+function clearPasscode() {
+  currentInput = "";
+  for (let i = 0; i < 4; i++) {
+    const dot = document.getElementById(`dot${i}`);
+    if (dot) dot.classList.remove("filled");
+  }
+}
+
+function openApp(appName) {
+  const screens = {
+    whatsapp: "whatsapp-app",
+    notes: "notes-app",
+    instagram: "instagram-app",
+    photos: "photos-app"
+  };
+
+  if (!screens[appName]) return;
+  goToScreen(screens[appName]);
+
+  if (appName === "whatsapp") renderChatNode("start");
+}
+
+function renderChatNode(nodeKey) {
+  const node = auStory[nodeKey];
+  const chatBody = document.getElementById("wa-chat-body");
+  const choicesArea = document.getElementById("wa-choices-area");
+
+  if (!node || !chatBody || !choicesArea) {
+    console.error("Node cerita atau elemen chat tidak ditemukan.");
+    return;
+  }
+
+  chatBody.innerHTML = "";
+  choicesArea.innerHTML = "";
+
+  node.messages.forEach(msg => {
+    const bubble = document.createElement("div");
+    bubble.classList.add("bubble", msg.type);
+    bubble.textContent = msg.text;
+    chatBody.appendChild(bubble);
+  });
+
+  node.choices.forEach(choice => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "wa-btn";
+    button.textContent = choice.text;
+    button.addEventListener("click", () => renderChatNode(choice.nextNode));
+    choicesArea.appendChild(button);
+  });
+
+  chatBody.scrollTop = chatBody.scrollHeight;
+}
+
+function showPhoto(caption) {
+  document.getElementById("photo-caption").textContent = caption;
+}
+
+window.addEventListener("load", () => {
+  clearPasscode();
+  goToScreen("lock-screen");
+});
+</script>
+</body>
+</html>
